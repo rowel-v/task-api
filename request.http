@@ -1,0 +1,14 @@
+@baseUrl = http://localhost:8080
+
+### Create
+# @name createTask
+POST {{baseUrl}}/tasks
+Content-Type: application/json
+
+{ "name": "Test", "priority": "LOW" }
+
+### Use the returned id
+GET {{baseUrl}}/tasks/12
+
+### get all task 
+GET {{baseUrl}}/tasks
