@@ -1,13 +1,17 @@
 package com.rowel.taskapi.controller;
 
 import com.rowel.taskapi.dto.request.CreateTaskRequest;
+import com.rowel.taskapi.dto.request.DeleteTaskRequest;
 import com.rowel.taskapi.dto.request.UpdateTaskRequest;
 import com.rowel.taskapi.dto.response.ApiResponse;
 import com.rowel.taskapi.dto.response.TaskResponse;
+import com.rowel.taskapi.model.Task;
 import com.rowel.taskapi.service.TaskService;
+import com.rowel.taskapi.shared.TaskStatusAction;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -62,6 +66,26 @@ public class TaskController {
     TaskResponse task = taskService.updateTask(id, req);
     return ResponseEntity.ok(
       ApiResponse.successfull("Task updated successfully", task)
+    );
+  }
+
+  @DeleteMapping("/{id}")
+  public ResponseEntity<ApiResponse<Void>> deleteTask(
+    @PathVariable("id") Long taskId
+  ) {
+    taskService.deleteTask(taskId);
+    return ResponseEntity.status(204).build();
+  }
+
+  @PatchMapping("/{id}/{taskStatusAction}")
+  public ResponseEntity<ApiResponse<TaskResponse>> updateTaskStatus(
+    @PathVariable Long id,
+    @PathVariable TaskStatusAction taskStatusAction
+  ) {
+    TaskResponse result = taskService.updateTaskStatus(id, taskStatusAction);
+
+    return ResponseEntity.ok(
+      ApiResponse.successfull("Task updated successfully", result)
     );
   }
 }

@@ -1,6 +1,7 @@
 package com.rowel.taskapi.service;
 
 import com.rowel.taskapi.dto.request.CreateTaskRequest;
+import com.rowel.taskapi.dto.request.DeleteTaskRequest;
 import com.rowel.taskapi.dto.request.UpdateTaskRequest;
 import com.rowel.taskapi.dto.response.TaskResponse;
 import com.rowel.taskapi.exception.TaskNotFoundException;
@@ -8,6 +9,7 @@ import com.rowel.taskapi.mapper.TaskMapper;
 import com.rowel.taskapi.model.Task;
 import com.rowel.taskapi.model.TaskStatus;
 import com.rowel.taskapi.repository.TaskRepository;
+import com.rowel.taskapi.shared.TaskStatusAction;
 import java.time.Instant;
 import java.util.List;
 import org.springframework.stereotype.Service;
@@ -56,5 +58,34 @@ public class TaskService {
     }
 
     return taskMapper.taskToResponse(taskRepository.save(task));
+  }
+
+  public void deleteTask(Long taskId) {
+    taskRepository
+      .findById(taskId)
+      .ifPresentOrElse(
+        task -> taskRepository.deleteById(task.getId()),
+        () -> {
+          throw new TaskNotFoundException(taskId);
+        }
+      );
+  }
+
+  public TaskResponse updateTaskStatus(
+    Long taskId,
+    TaskStatusAction taskStatusAction
+  ) {
+    return taskRepository
+      .findById(taskId)
+      .map(targetTask -> {
+        switch (taskStatusAction) {
+          case START -> targetTask.setStatus(TaskStatus.IN_PROGRESS);
+          case COMPLETE -> targetTask.setStatus(TaskStatus.COMPLETED);
+        }
+
+        taskRepository.save(targetTask);
+        return taskMapper.taskToResponse(targetTask);
+      })
+      .orElseThrow(() -> new TaskNotFoundException(taskId));
   }
 }
