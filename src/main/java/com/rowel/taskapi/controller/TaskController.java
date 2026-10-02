@@ -1,11 +1,9 @@
 package com.rowel.taskapi.controller;
 
 import com.rowel.taskapi.dto.request.CreateTaskRequest;
-import com.rowel.taskapi.dto.request.DeleteTaskRequest;
 import com.rowel.taskapi.dto.request.UpdateTaskRequest;
 import com.rowel.taskapi.dto.response.ApiResponse;
 import com.rowel.taskapi.dto.response.TaskResponse;
-import com.rowel.taskapi.model.Task;
 import com.rowel.taskapi.service.TaskService;
 import com.rowel.taskapi.shared.TaskStatusAction;
 import jakarta.validation.Valid;
@@ -21,13 +19,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/tasks")
+@RequestMapping("/api/tasks")
 public class TaskController {
 
   private final TaskService taskService;
 
   public TaskController(TaskService taskService) {
-    this.taskService = taskService;
+    this.taskService = taskService; 
   }
 
   @GetMapping
