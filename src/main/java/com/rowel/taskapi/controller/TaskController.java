@@ -1,6 +1,7 @@
 package com.rowel.taskapi.controller;
 
 import com.rowel.taskapi.dto.request.CreateTaskRequest;
+import com.rowel.taskapi.dto.request.DeleteTaskRequest;
 import com.rowel.taskapi.dto.request.UpdateTaskRequest;
 import com.rowel.taskapi.dto.response.ApiResponse;
 import com.rowel.taskapi.dto.response.TaskResponse;
@@ -8,6 +9,8 @@ import com.rowel.taskapi.service.TaskService;
 import com.rowel.taskapi.shared.TaskStatusAction;
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.logging.Logger;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -67,12 +70,12 @@ public class TaskController {
     );
   }
 
-  @DeleteMapping("/{id}")
-  public ResponseEntity<ApiResponse<Void>> deleteTask(
-    @PathVariable("id") Long taskId
+  @DeleteMapping
+  public ResponseEntity<Void> deleteTask(
+    @Valid  @RequestBody DeleteTaskRequest req
   ) {
-    taskService.deleteTask(taskId);
-    return ResponseEntity.status(204).build();
+    taskService.deleteTask(req);
+    return ResponseEntity.noContent().build(); // 204
   }
 
   @PatchMapping("/{id}/{taskStatusAction}")

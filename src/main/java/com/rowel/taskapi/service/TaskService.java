@@ -12,7 +12,10 @@ import com.rowel.taskapi.repository.TaskRepository;
 import com.rowel.taskapi.shared.TaskStatusAction;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class TaskService {
@@ -60,15 +63,28 @@ public class TaskService {
     return taskMapper.taskToResponse(taskRepository.save(task));
   }
 
-  public void deleteTask(Long taskId) {
-    taskRepository
-      .findById(taskId)
-      .ifPresentOrElse(
-        task -> taskRepository.deleteById(task.getId()),
-        () -> {
-          throw new TaskNotFoundException(taskId);
-        }
-      );
+  @SuppressWarnings("null")
+  @Transactional
+  public void deleteTask(DeleteTaskRequest req) {
+    List<Task> tasks = taskRepository.findAllById(req.taskIds());
+
+    Set<Long> foundIds = tasks
+      .stream()
+      .map(Task::getId)
+      .collect(Collectors.toSet());
+
+    // ids the client sent that don't exist
+    List<Long> missingIds = req
+      .taskIds()
+      .stream()
+      .filter(id -> !foundIds.contains(id))
+      .toList();
+
+    if (!missingIds.isEmpty()) {
+      throw new TaskNotFoundException(missingIds);
+    }
+
+    taskRepository.deleteAll(tasks);
   }
 
   public TaskResponse updateTaskStatus(
