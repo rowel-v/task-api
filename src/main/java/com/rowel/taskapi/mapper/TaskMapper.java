@@ -12,8 +12,8 @@ public class TaskMapper {
 
   public Task requestToTask(CreateTaskRequest req) {
     return Task.builder()
-      .name(req.name())
-      .description(req.description())
+      .name(req.name().trim())
+      .description(req.description().trim())
       .status(TaskStatus.PENDING)
       .priority(req.priority())
       .dueDate(req.dueDate())
@@ -36,10 +36,10 @@ public class TaskMapper {
 
   public void updateTaskFromRequest(UpdateTaskRequest req, Task task) {
     if (req.name() != null) {
-      task.setName(req.name());
+      task.setName(req.name().trim());
     }
     if (req.description() != null) {
-      task.setDescription(req.description());
+      task.setDescription(req.description().trim());
     }
     if (req.status() != null) {
       task.setStatus(req.status());

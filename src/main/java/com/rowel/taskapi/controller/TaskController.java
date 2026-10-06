@@ -9,8 +9,6 @@ import com.rowel.taskapi.service.TaskService;
 import com.rowel.taskapi.shared.TaskStatusAction;
 import jakarta.validation.Valid;
 import java.util.List;
-import java.util.logging.Logger;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,24 +26,14 @@ public class TaskController {
   private final TaskService taskService;
 
   public TaskController(TaskService taskService) {
-    this.taskService = taskService; 
+    this.taskService = taskService;
   }
 
   @GetMapping
   public ResponseEntity<ApiResponse<List<TaskResponse>>> getTasks() {
     List<TaskResponse> tasks = taskService.getAllTasks();
     return ResponseEntity.ok(
-      ApiResponse.successfull("Tasks All retrieved", tasks)
-    );
-  }
-
-  @GetMapping("/{id}")
-  public ResponseEntity<ApiResponse<TaskResponse>> getTask(
-    @PathVariable Long id
-  ) {
-    TaskResponse task = taskService.getTask(id);
-    return ResponseEntity.ok(
-      ApiResponse.successfull("Task retrieve successfully", task)
+      ApiResponse.successful("Tasks All retrieved", tasks)
     );
   }
 
@@ -55,27 +43,36 @@ public class TaskController {
   ) {
     TaskResponse task = taskService.createTask(req);
     return ResponseEntity.status(201).body(
-      ApiResponse.successfull("Task created successfully", task)
+      ApiResponse.successful("Task created successfully", task)
     );
   }
 
   @PatchMapping("/{id}")
   public ResponseEntity<ApiResponse<TaskResponse>> updateTask(
-    @PathVariable("id") Long id,
+    @PathVariable Long id,
     @Valid @RequestBody UpdateTaskRequest req
   ) {
     TaskResponse task = taskService.updateTask(id, req);
     return ResponseEntity.ok(
-      ApiResponse.successfull("Task updated successfully", task)
+      ApiResponse.successful("Task updated successfully", task)
     );
   }
 
   @DeleteMapping
-  public ResponseEntity<Void> deleteTask(
-    @Valid  @RequestBody DeleteTaskRequest req
+  public ResponseEntity<ApiResponse<Void>> deleteTask(
+    @Valid @RequestBody DeleteTaskRequest req
   ) {
     taskService.deleteTask(req);
-    return ResponseEntity.noContent().build(); // 204
+
+    int count = req.taskIds().size();
+    String message =
+      count == 1
+        ? "Task deleted successfully"
+        : String.format("%d tasks deleted successfully", count);
+
+    return ResponseEntity.status(200).body(
+      ApiResponse.successful(message, null)
+    );
   }
 
   @PatchMapping("/{id}/{taskStatusAction}")
@@ -86,7 +83,7 @@ public class TaskController {
     TaskResponse result = taskService.updateTaskStatus(id, taskStatusAction);
 
     return ResponseEntity.ok(
-      ApiResponse.successfull("Task updated successfully", result)
+      ApiResponse.successful("Task updated successfully", result)
     );
   }
 }

@@ -1,8 +1,8 @@
 package com.rowel.taskapi.dto.request;
 
+import jakarta.validation.constraints.NotEmpty;
 import java.util.List;
 
-import jakarta.validation.constraints.NotEmpty;
-
-public record DeleteTaskRequest(@NotEmpty  List<Long> taskIds) {
-}
+public record DeleteTaskRequest(
+  @NotEmpty(message = "{task.ids.notempty}") List<Long> taskIds
+) {}
