@@ -36,13 +36,6 @@ public class TaskService {
       .toList();
   }
 
-  public TaskResponse getTask(Long id) {
-    Task task = taskRepository
-      .findById(id)
-      .orElseThrow(() -> new TaskNotFoundException(id));
-    return taskMapper.taskToResponse(task);
-  }
-
   public TaskResponse createTask(CreateTaskRequest req) {
     Task task = taskMapper.requestToTask(req);
     Task saved = taskRepository.save(task);

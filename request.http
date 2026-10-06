@@ -1,11 +1,11 @@
-@baseUrl = http://localhost:8080
+@baseUrl = http://localhost:8080/api/tasks
 
 ### Create
 # @name createTask
-POST {{baseUrl}}/tasks
+POST {{baseUrl}}
 Content-Type: application/json
 
-{ "name": "Test", "priority": "LOW" }
+{ "name": "Test", "description": "     ", "priority": "LOW" }
 
 ### Use the returned id
 GET {{baseUrl}}/tasks/12
