@@ -11,12 +11,12 @@ import jakarta.validation.constraints.Size;
 import java.time.Instant;
 
 public record UpdateTaskRequest(
+  
   @NotBlank(message = "{task.name.notblank}")
   @Size(max = 255, message = "{task.name.size.invalid}")
   String name,
   
-  @NotBlank(message = "{task.description.notblank}")
-  @Size(min = 1, max = 2000, message = "{task.description.size.invalid}")
+  @Size(max = 2000, message = "{task.description.size.invalid}")
   String description,
   
   @NotNull (message = "{task.status.notnull}")
@@ -25,7 +25,7 @@ public record UpdateTaskRequest(
   @NotNull (message = "{task.priority.notnull}")
   TaskPriority priority,
   
-    @NotNull(message = "{task.duedate.notnull}")
+  @NotNull(message = "{task.duedate.notnull}")
   @Future(message = "{task.duedate.notfuture}")
   Instant dueDate
 ) {}
