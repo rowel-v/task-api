@@ -58,8 +58,8 @@ public class TaskService {
 
   @SuppressWarnings("null")
   @Transactional
-  public void deleteTask(DeleteTaskRequest req) {
-    List<Task> tasks = taskRepository.findAllById(req.taskIds());
+  public void deleteTask(List<Long> taskIds) {
+    List<Task> tasks = taskRepository.findAllById(taskIds);
 
     Set<Long> foundIds = tasks
       .stream()
@@ -67,8 +67,7 @@ public class TaskService {
       .collect(Collectors.toSet());
 
     // ids the client sent that don't exist
-    List<Long> missingIds = req
-      .taskIds()
+    List<Long> missingIds = taskIds
       .stream()
       .filter(id -> !foundIds.contains(id))
       .toList();
@@ -96,5 +95,15 @@ public class TaskService {
         return taskMapper.taskToResponse(targetTask);
       })
       .orElseThrow(() -> new TaskNotFoundException(taskId));
+  }
+
+  public TaskResponse reopenTask(Long id, UpdateTaskRequest changes) {
+    return taskRepository
+      .findById(id)
+      .map(task -> {
+        taskMapper.updateTaskFromRequest(changes, task);
+        return taskMapper.taskToResponse(taskRepository.save(task));
+      })
+      .orElseThrow(() -> new TaskNotFoundException(id));
   }
 }
