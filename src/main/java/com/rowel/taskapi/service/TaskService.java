@@ -1,9 +1,9 @@
 package com.rowel.taskapi.service;
 
 import com.rowel.taskapi.dto.request.CreateTaskRequest;
-import com.rowel.taskapi.dto.request.DeleteTaskRequest;
 import com.rowel.taskapi.dto.request.UpdateTaskRequest;
 import com.rowel.taskapi.dto.response.TaskResponse;
+import com.rowel.taskapi.exception.TaskAlreadyCompletedException;
 import com.rowel.taskapi.exception.TaskNotFoundException;
 import com.rowel.taskapi.mapper.TaskMapper;
 import com.rowel.taskapi.model.Task;
@@ -43,17 +43,24 @@ public class TaskService {
   }
 
   public TaskResponse updateTask(Long id, UpdateTaskRequest req) {
-    Task task = taskRepository
+    return taskRepository
       .findById(id)
+      .map(task -> {
+
+        // should not update task if already completed
+        if (task.getStatus().equals(TaskStatus.COMPLETED)) {
+          throw new TaskAlreadyCompletedException();
+        }
+
+        taskMapper.updateTaskFromRequest(req, task);
+
+        if (req.status() == TaskStatus.COMPLETED && task.getCompletedAt() == null) {
+          task.setCompletedAt(Instant.now());
+        }
+
+        return taskMapper.taskToResponse(taskRepository.save(task));
+      })
       .orElseThrow(() -> new TaskNotFoundException(id));
-
-    taskMapper.updateTaskFromRequest(req, task);
-
-    if (req.status() == TaskStatus.COMPLETED && task.getCompletedAt() == null) {
-      task.setCompletedAt(Instant.now());
-    }
-
-    return taskMapper.taskToResponse(taskRepository.save(task));
   }
 
   @SuppressWarnings("null")

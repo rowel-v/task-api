@@ -2,6 +2,7 @@ package com.rowel.taskapi.exception;
 
 import com.rowel.taskapi.dto.response.ApiResponse;
 import java.util.stream.Collectors;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -40,6 +41,15 @@ public class GlobalExceptionHandler {
   ) {
     return ResponseEntity.badRequest().body(
       ApiResponse.error("Invalid request body.")
+    );
+  }
+
+  @ExceptionHandler(TaskAlreadyCompletedException.class)
+  public ResponseEntity<ApiResponse<Void>> handleCompleted(
+    TaskAlreadyCompletedException ex
+  ) {
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(
+      ApiResponse.error(ex.getMessage())
     );
   }
 }
