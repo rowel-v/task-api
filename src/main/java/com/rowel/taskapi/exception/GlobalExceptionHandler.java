@@ -52,4 +52,13 @@ public class GlobalExceptionHandler {
       ApiResponse.error(ex.getMessage())
     );
   }
+
+  @ExceptionHandler(TaskNotCompletedException.class)
+  public ResponseEntity<ApiResponse<Void>> handleNotCompleted(
+    TaskNotCompletedException ex
+  ) {
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(
+      ApiResponse.error(ex.getMessage())
+    );
+  }
 }

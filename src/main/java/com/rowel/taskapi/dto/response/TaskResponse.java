@@ -34,5 +34,11 @@ public record TaskResponse(
   Instant dueDate,
   
   @Schema (nullable = true)
-  Instant completedAt
+  Instant completedAt,
+
+  @Schema(requiredMode = RequiredMode.REQUIRED)
+  boolean archived,
+
+  @Schema (nullable = true)
+  Instant archivedAt
 ) {}

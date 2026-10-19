@@ -93,12 +93,29 @@ public class TaskController {
 
   @PatchMapping("/{id}/reopen")
   public ResponseEntity<ApiResponse<TaskResponse>> reopenTask(
-    @PathVariable  Long id,
+    @PathVariable Long id,
     @RequestBody @Valid UpdateTaskRequest changes
   ) {
     var result = taskService.reopenTask(id, changes);
     return ResponseEntity.ok(
       ApiResponse.successful("Task reopened successfully", result)
+    );
+  }
+
+  @PatchMapping("/archive")
+  public ResponseEntity<ApiResponse<Void>> archiveTask(
+    @RequestParam List<Long> ids
+  ) {
+    taskService.archiveTasks(ids);
+
+    int count = ids.size();
+    String message =
+      count == 1
+        ? "Task archived successfully"
+        : String.format("%d tasks archived successfully", count);
+
+    return ResponseEntity.status(200).body(
+      ApiResponse.successful(message, null)
     );
   }
 }

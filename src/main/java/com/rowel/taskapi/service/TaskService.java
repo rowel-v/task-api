@@ -4,6 +4,7 @@ import com.rowel.taskapi.dto.request.CreateTaskRequest;
 import com.rowel.taskapi.dto.request.UpdateTaskRequest;
 import com.rowel.taskapi.dto.response.TaskResponse;
 import com.rowel.taskapi.exception.TaskAlreadyCompletedException;
+import com.rowel.taskapi.exception.TaskNotCompletedException;
 import com.rowel.taskapi.exception.TaskNotFoundException;
 import com.rowel.taskapi.mapper.TaskMapper;
 import com.rowel.taskapi.model.Task;
@@ -46,7 +47,6 @@ public class TaskService {
     return taskRepository
       .findById(id)
       .map(task -> {
-
         // should not update task if already completed
         if (task.getStatus().equals(TaskStatus.COMPLETED)) {
           throw new TaskAlreadyCompletedException();
@@ -54,7 +54,9 @@ public class TaskService {
 
         taskMapper.updateTaskFromRequest(req, task);
 
-        if (req.status() == TaskStatus.COMPLETED && task.getCompletedAt() == null) {
+        if (
+          req.status() == TaskStatus.COMPLETED && task.getCompletedAt() == null
+        ) {
           task.setCompletedAt(Instant.now());
         }
 
@@ -112,5 +114,44 @@ public class TaskService {
         return taskMapper.taskToResponse(taskRepository.save(task));
       })
       .orElseThrow(() -> new TaskNotFoundException(id));
+  }
+
+  @SuppressWarnings("null")
+  @Transactional
+  public void archiveTasks(List<Long> taskIds) {
+    List<Task> tasks = taskRepository.findAllById(taskIds);
+
+    // ids the client sent that don't exist
+    Set<Long> foundIds = tasks
+      .stream()
+      .map(Task::getId)
+      .collect(Collectors.toSet());
+      
+    List<Long> missingIds = taskIds
+      .stream()
+      .filter(id -> !foundIds.contains(id))
+      .distinct()
+      .toList();
+
+    if (!missingIds.isEmpty()) {
+      throw new TaskNotFoundException(missingIds);
+    }
+
+    List<Long> incompleteTasksIds = tasks
+      .stream()
+      .filter(t -> t.getStatus() != TaskStatus.COMPLETED)
+      .map(Task::getId)
+      .toList();
+
+    // only completed tasks can be archived
+    if (!incompleteTasksIds.isEmpty()) {
+      throw new TaskNotCompletedException(incompleteTasksIds);
+    }
+
+    Instant now = Instant.now();
+    tasks.forEach(t -> {
+      t.setArchived(true);
+      t.setArchivedAt(now);
+    });
   }
 }

@@ -30,7 +30,9 @@ public class TaskMapper {
       task.getCreatedAt(),
       task.getUpdatedAt(),
       task.getDueDate(),
-      task.getCompletedAt()
+      task.getCompletedAt(),
+      task.isArchived(),
+      task.getArchivedAt()
     );
   }
 

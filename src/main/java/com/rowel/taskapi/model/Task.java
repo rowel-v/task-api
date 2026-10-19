@@ -36,10 +36,15 @@ public class Task {
   @Enumerated(EnumType.STRING)
   private TaskPriority priority;
 
+  @Column(nullable = false)
+  private boolean archived = false;
+
+  private Instant dueDate;
+
   private Instant createdAt;
   private Instant updatedAt;
-  private Instant dueDate;
   private Instant completedAt;
+  private Instant archivedAt;
 
   @PrePersist
   private void onCreate() {
@@ -66,6 +71,8 @@ public class Task {
     this.updatedAt = taskBuilder.updatedAt;
     this.dueDate = taskBuilder.dueDate;
     this.completedAt = taskBuilder.completedAt;
+    this.archived = taskBuilder.archived;
+    this.archivedAt = taskBuilder.archivedAt;
   }
 
   @Override
@@ -73,6 +80,7 @@ public class Task {
     return getClass().hashCode();
   }
 
+  // two tasks are equal when they have the same id 
   @Override
   public boolean equals(Object obj) {
     if (this == obj) return true;
@@ -152,6 +160,22 @@ public class Task {
     this.completedAt = completedAt;
   }
 
+  public boolean isArchived() {
+    return archived;
+  }
+
+  public void setArchived(boolean archived) {
+    this.archived = archived;
+  }
+
+  public Instant getArchivedAt() {
+    return archivedAt;
+  }
+
+  public void setArchivedAt(Instant archivedAt) {
+    this.archivedAt = archivedAt;
+  }
+
   public static class TaskBuilder {
 
     private Long id;
@@ -163,6 +187,8 @@ public class Task {
     private Instant updatedAt;
     private Instant dueDate;
     private Instant completedAt;
+    private boolean archived;
+    private Instant archivedAt;
 
     public TaskBuilder name(String name) {
       this.name = name;
@@ -201,6 +227,16 @@ public class Task {
 
     public TaskBuilder completedAt(Instant completedAt) {
       this.completedAt = completedAt;
+      return this;
+    }
+
+    public TaskBuilder archived(boolean archived) {
+      this.archived = archived;
+      return this;
+    }
+
+    public TaskBuilder archivedAt(Instant archivedAt) {
+      this.archivedAt = archivedAt;
       return this;
     }
 
