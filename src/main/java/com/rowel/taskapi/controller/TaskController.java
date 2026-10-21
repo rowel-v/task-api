@@ -103,10 +103,10 @@ public class TaskController {
   }
 
   @PatchMapping("/archive")
-  public ResponseEntity<ApiResponse<Void>> archiveTask(
+  public ResponseEntity<ApiResponse<List<TaskResponse>>> archiveTask(
     @RequestParam List<Long> ids
   ) {
-    taskService.archiveTasks(ids);
+    var result = taskService.archiveTasks(ids);
 
     int count = ids.size();
     String message =
@@ -115,7 +115,7 @@ public class TaskController {
         : String.format("%d tasks archived successfully", count);
 
     return ResponseEntity.status(200).body(
-      ApiResponse.successful(message, null)
+      ApiResponse.successful(message, result)
     );
   }
 }

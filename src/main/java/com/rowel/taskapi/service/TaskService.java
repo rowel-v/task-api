@@ -118,7 +118,7 @@ public class TaskService {
 
   @SuppressWarnings("null")
   @Transactional
-  public void archiveTasks(List<Long> taskIds) {
+  public List<TaskResponse> archiveTasks(List<Long> taskIds) {
     List<Task> tasks = taskRepository.findAllById(taskIds);
 
     // ids the client sent that don't exist
@@ -126,7 +126,7 @@ public class TaskService {
       .stream()
       .map(Task::getId)
       .collect(Collectors.toSet());
-      
+
     List<Long> missingIds = taskIds
       .stream()
       .filter(id -> !foundIds.contains(id))
@@ -153,5 +153,9 @@ public class TaskService {
       t.setArchived(true);
       t.setArchivedAt(now);
     });
+
+    taskRepository.saveAll(tasks);
+
+    return tasks.stream().map(taskMapper::taskToResponse).toList();
   }
 }
