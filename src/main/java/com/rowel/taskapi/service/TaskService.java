@@ -92,12 +92,17 @@ public class TaskService {
     Long taskId,
     TaskStatusAction taskStatusAction
   ) {
-    return taskRepository
+    return taskRepository 
       .findById(taskId)
       .map(targetTask -> {
         switch (taskStatusAction) {
           case START -> targetTask.setStatus(TaskStatus.IN_PROGRESS);
-          case COMPLETE -> targetTask.setStatus(TaskStatus.COMPLETED);
+          case COMPLETE -> {
+            targetTask.setStatus(TaskStatus.COMPLETED);
+            if (targetTask.getCompletedAt() == null) {
+              targetTask.setCompletedAt(Instant.now());
+            }
+          }
         }
 
         taskRepository.save(targetTask);
