@@ -4,9 +4,12 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -18,9 +21,17 @@ public class Task {
 
   protected Task() {}
 
+  public static TaskBuilder builder() {
+    return new TaskBuilder();
+  }
+
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
+
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(name = "user_id", nullable = false)
+  private TaskUser user;
 
   @Column(nullable = false, length = 255)
   private String name;
@@ -57,18 +68,12 @@ public class Task {
     updatedAt = Instant.now();
   }
 
-  public static TaskBuilder builder() {
-    return new TaskBuilder();
-  }
-
   private Task(TaskBuilder taskBuilder) {
     this.id = taskBuilder.id;
     this.name = taskBuilder.name;
     this.description = taskBuilder.description;
     this.status = taskBuilder.status;
     this.priority = taskBuilder.priority;
-    this.createdAt = taskBuilder.createdAt;
-    this.updatedAt = taskBuilder.updatedAt;
     this.dueDate = taskBuilder.dueDate;
     this.completedAt = taskBuilder.completedAt;
     this.archived = taskBuilder.archived;
@@ -80,7 +85,7 @@ public class Task {
     return getClass().hashCode();
   }
 
-  // two tasks are equal when they have the same id 
+  // two tasks are equal when they have the same id
   @Override
   public boolean equals(Object obj) {
     if (this == obj) return true;
@@ -94,6 +99,10 @@ public class Task {
 
   public Long getId() {
     return id;
+  }
+
+  public TaskUser getUser() {
+    return user;
   }
 
   public String getName() {
@@ -132,16 +141,8 @@ public class Task {
     return createdAt;
   }
 
-  public void setCreatedAt(Instant createdAt) {
-    this.createdAt = createdAt;
-  }
-
   public Instant getUpdatedAt() {
     return updatedAt;
-  }
-
-  public void setUpdatedAt(Instant updatedAt) {
-    this.updatedAt = updatedAt;
   }
 
   public Instant getDueDate() {
@@ -183,8 +184,6 @@ public class Task {
     private String description;
     private TaskStatus status;
     private TaskPriority priority;
-    private Instant createdAt;
-    private Instant updatedAt;
     private Instant dueDate;
     private Instant completedAt;
     private boolean archived;
@@ -207,16 +206,6 @@ public class Task {
 
     public TaskBuilder priority(TaskPriority priority) {
       this.priority = priority;
-      return this;
-    }
-
-    public TaskBuilder createdAt(Instant createdAt) {
-      this.createdAt = createdAt;
-      return this;
-    }
-
-    public TaskBuilder updatedAt(Instant updatedAt) {
-      this.updatedAt = updatedAt;
       return this;
     }
 
