@@ -1,25 +1,31 @@
 package com.rowel.taskapi.mapper;
 
-import com.rowel.taskapi.dto.request.CreateTaskRequest;
-import com.rowel.taskapi.dto.request.UpdateTaskRequest;
-import com.rowel.taskapi.dto.response.TaskResponse;
+import com.rowel.taskapi.dto.task.request.CreateTaskRequest;
+import com.rowel.taskapi.dto.task.request.UpdateTaskRequest;
+import com.rowel.taskapi.dto.task.response.TaskResponse;
+import com.rowel.taskapi.dto.task.response.UserWithTasksResponse;
 import com.rowel.taskapi.model.Task;
 import com.rowel.taskapi.model.TaskStatus;
+import com.rowel.taskapi.model.TaskUser;
+import java.util.List;
 import org.springframework.stereotype.Component;
 
 @Component
 public class TaskMapper {
 
-  public Task requestToTask(CreateTaskRequest req) {
+  // convert CreateTaskRequest DTO to Task Entity
+  public Task requestToTask(CreateTaskRequest req, TaskUser user) {
     return Task.builder()
+      .user(user)
       .name(req.name().trim())
-      .description(req.description().trim())
+      .description(req.description() == null ? null : req.description().trim())
       .status(TaskStatus.PENDING)
       .priority(req.priority())
       .dueDate(req.dueDate())
       .build();
   }
 
+  // convert Task entity to TaskResponse DTO
   public TaskResponse taskToResponse(Task task) {
     return new TaskResponse(
       task.getId(),
@@ -36,6 +42,19 @@ public class TaskMapper {
     );
   }
 
+  // Maps the user and their tasks to a UserWithTasksResponse DTO.
+  public UserWithTasksResponse tasksToResponse(
+    TaskUser user,
+    List<Task> tasks
+  ) {
+    return new UserWithTasksResponse(
+      user.getUsername(),
+      user.getDisplayName(),
+      tasks.stream().map(this::taskToResponse).toList()
+    );
+  }
+
+  // Updates the task using non-null request fields.
   public void updateTaskFromRequest(UpdateTaskRequest req, Task task) {
     if (req.name() != null) {
       task.setName(req.name().trim());

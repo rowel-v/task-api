@@ -1,20 +1,28 @@
 package com.rowel.taskapi.service;
 
-import com.rowel.taskapi.dto.request.CreateTaskRequest;
-import com.rowel.taskapi.dto.request.UpdateTaskRequest;
-import com.rowel.taskapi.dto.response.TaskResponse;
+import com.rowel.taskapi.dto.task.request.CreateTaskRequest;
+import com.rowel.taskapi.dto.task.request.UpdateTaskRequest;
+import com.rowel.taskapi.dto.task.response.TaskResponse;
+import com.rowel.taskapi.dto.task.response.UserWithTasksResponse;
 import com.rowel.taskapi.exception.TaskAlreadyCompletedException;
 import com.rowel.taskapi.exception.TaskNotCompletedException;
 import com.rowel.taskapi.exception.TaskNotFoundException;
+import com.rowel.taskapi.exception.UserNotFoundException;
 import com.rowel.taskapi.mapper.TaskMapper;
 import com.rowel.taskapi.model.Task;
 import com.rowel.taskapi.model.TaskStatus;
+import com.rowel.taskapi.model.TaskUser;
 import com.rowel.taskapi.repository.TaskRepository;
+import com.rowel.taskapi.repository.TaskUserRepository;
+import com.rowel.taskapi.security.TaskUserDetails;
 import com.rowel.taskapi.shared.TaskStatusAction;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,30 +30,59 @@ import org.springframework.transaction.annotation.Transactional;
 public class TaskService {
 
   private final TaskRepository taskRepository;
+  private final TaskUserRepository userRepository;
   private final TaskMapper taskMapper;
 
-  public TaskService(TaskRepository tRepository, TaskMapper tMapper) {
+  public TaskService(
+    TaskRepository tRepository,
+    TaskUserRepository userRepository,
+    TaskMapper tMapper
+  ) {
     this.taskRepository = tRepository;
+    this.userRepository = userRepository;
     this.taskMapper = tMapper;
   }
 
-  public List<TaskResponse> getAllTasks() {
-    return taskRepository
-      .findAll()
-      .stream()
-      .map(taskMapper::taskToResponse)
-      .toList();
+  private Long currentUserId() {
+    Authentication authentication =
+      SecurityContextHolder.getContext().getAuthentication();
+
+    if (
+      authentication == null ||
+      !authentication.isAuthenticated() ||
+      !(authentication.getPrincipal() instanceof TaskUserDetails principal)
+    ) {
+      throw new AuthenticationCredentialsNotFoundException(
+        "Authentication is required"
+      );
+    }
+
+    return principal.getUserId();
+  }
+
+  private TaskUser currentUser() {
+    return userRepository
+      .findById(currentUserId())
+      .orElseThrow(UserNotFoundException::new);
+  }
+
+  public UserWithTasksResponse getAllTasks() {
+    TaskUser user = currentUser();
+    List<Task> tasks = taskRepository.findByUser(user);
+
+    return taskMapper.tasksToResponse(user, tasks);
   }
 
   public TaskResponse createTask(CreateTaskRequest req) {
-    Task task = taskMapper.requestToTask(req);
+    TaskUser user = currentUser();
+    Task task = taskMapper.requestToTask(req, user);
     Task saved = taskRepository.save(task);
     return taskMapper.taskToResponse(saved);
   }
 
   public TaskResponse updateTask(Long id, UpdateTaskRequest req) {
     return taskRepository
-      .findById(id)
+      .findByIdAndUser_Id(id, currentUserId())
       .map(task -> {
         // should not update task if already completed
         if (task.getStatus().equals(TaskStatus.COMPLETED)) {
@@ -67,8 +104,11 @@ public class TaskService {
 
   @SuppressWarnings("null")
   @Transactional
-  public void deleteTask(List<Long> taskIds) {
-    List<Task> tasks = taskRepository.findAllById(taskIds);
+  public void deleteTask(List<Long> tasksIds) {
+    List<Task> tasks = taskRepository.findAllByIdInAndUser_Id(
+      tasksIds,
+      currentUserId()
+    );
 
     Set<Long> foundIds = tasks
       .stream()
@@ -76,7 +116,7 @@ public class TaskService {
       .collect(Collectors.toSet());
 
     // ids the client sent that don't exist
-    List<Long> missingIds = taskIds
+    List<Long> missingIds = tasksIds
       .stream()
       .filter(id -> !foundIds.contains(id))
       .toList();
@@ -92,11 +132,16 @@ public class TaskService {
     Long taskId,
     TaskStatusAction taskStatusAction
   ) {
-    return taskRepository 
-      .findById(taskId)
+    return taskRepository
+      .findByIdAndUser_Id(taskId, currentUserId())
       .map(targetTask -> {
         switch (taskStatusAction) {
-          case START -> targetTask.setStatus(TaskStatus.IN_PROGRESS);
+          case START -> {
+            if (targetTask.getStatus() == TaskStatus.COMPLETED) {
+              throw new TaskAlreadyCompletedException();
+            }
+            targetTask.setStatus(TaskStatus.IN_PROGRESS);
+          }
           case COMPLETE -> {
             targetTask.setStatus(TaskStatus.COMPLETED);
             if (targetTask.getCompletedAt() == null) {
@@ -113,9 +158,18 @@ public class TaskService {
 
   public TaskResponse reopenTask(Long id, UpdateTaskRequest changes) {
     return taskRepository
-      .findById(id)
+      .findByIdAndUser_Id(id, currentUserId())
       .map(task -> {
+        if (task.getStatus() != TaskStatus.COMPLETED) {
+          throw new TaskNotCompletedException(List.of(id));
+        }
         taskMapper.updateTaskFromRequest(changes, task);
+        // Enforce the reopened state after mapping.
+        task.setStatus(TaskStatus.PENDING);
+        task.setCompletedAt(null);
+        task.setArchived(false);
+        task.setArchivedAt(null);
+
         return taskMapper.taskToResponse(taskRepository.save(task));
       })
       .orElseThrow(() -> new TaskNotFoundException(id));
@@ -124,7 +178,10 @@ public class TaskService {
   @SuppressWarnings("null")
   @Transactional
   public List<TaskResponse> archiveTasks(List<Long> taskIds) {
-    List<Task> tasks = taskRepository.findAllById(taskIds);
+    List<Task> tasks = taskRepository.findAllByIdInAndUser_Id(
+      taskIds,
+      currentUserId()
+    );
 
     // ids the client sent that don't exist
     Set<Long> foundIds = tasks

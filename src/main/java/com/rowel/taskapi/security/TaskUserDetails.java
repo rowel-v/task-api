@@ -24,8 +24,8 @@ public class TaskUserDetails implements UserDetails {
   }
 
   @Override
-  public Collection<? extends GrantedAuthority> getAuthorities() {
-    return List.of();
+  public String getUsername() {
+    return this.username;
   }
 
   @Override
@@ -34,7 +34,7 @@ public class TaskUserDetails implements UserDetails {
   }
 
   @Override
-  public String getUsername() {
-    return this.username;
+  public Collection<? extends GrantedAuthority> getAuthorities() {
+    return List.of();
   }
 }

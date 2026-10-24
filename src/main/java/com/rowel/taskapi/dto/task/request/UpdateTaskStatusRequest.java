@@ -1,4 +1,4 @@
-package com.rowel.taskapi.dto.request;
+package com.rowel.taskapi.dto.task.request;
 
 import com.rowel.taskapi.shared.TaskStatusAction;
 

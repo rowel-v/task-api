@@ -1,5 +1,6 @@
 package com.rowel.taskapi.config;
 
+import com.rowel.taskapi.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -15,31 +16,22 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 public class SecurityConfig {
 
+  @SuppressWarnings("null")
   @Bean
-  public PasswordEncoder passwordEncoder() {
-    return new BCryptPasswordEncoder();
-  }
-
-  @Bean
-  public AuthenticationManager authenticationManager(
-    UserDetailsService userDetailsService,
-    PasswordEncoder passwordEncoder
-  ) {
-    var provider = new DaoAuthenticationProvider(userDetailsService);
-
-    provider.setPasswordEncoder(passwordEncoder);
-
-    return new ProviderManager(provider);
-  }
-
-  @Bean
-  public SecurityFilterChain securityFilterChain(HttpSecurity http)
-    throws Exception {
+  public SecurityFilterChain securityFilterChain(
+    HttpSecurity http,
+    JwtAuthenticationFilter jwtAuthenticationFilter
+  ) throws Exception {
     return http
+      .addFilterBefore(
+        jwtAuthenticationFilter,
+        UsernamePasswordAuthenticationFilter.class
+      )
       .csrf(AbstractHttpConfigurer::disable)
       .formLogin(AbstractHttpConfigurer::disable)
       .httpBasic(AbstractHttpConfigurer::disable)
@@ -63,5 +55,22 @@ public class SecurityConfig {
         )
       )
       .build();
+  }
+
+  @Bean
+  public PasswordEncoder passwordEncoder() {
+    return new BCryptPasswordEncoder();
+  }
+
+  @Bean
+  public AuthenticationManager authenticationManager(
+    UserDetailsService userDetailsService,
+    PasswordEncoder passwordEncoder
+  ) {
+    var provider = new DaoAuthenticationProvider(userDetailsService);
+
+    provider.setPasswordEncoder(passwordEncoder);
+
+    return new ProviderManager(provider);
   }
 }

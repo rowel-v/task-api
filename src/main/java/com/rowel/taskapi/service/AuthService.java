@@ -1,8 +1,8 @@
 package com.rowel.taskapi.service;
 
-import com.rowel.taskapi.dto.request.CreateAccountRequest;
-import com.rowel.taskapi.dto.request.LoginAccountRequest;
-import com.rowel.taskapi.dto.response.LoginResponse;
+import com.rowel.taskapi.dto.auth.request.CreateAccountRequest;
+import com.rowel.taskapi.dto.auth.request.LoginAccountRequest;
+import com.rowel.taskapi.dto.auth.response.LoginResponse;
 import com.rowel.taskapi.exception.UserAlreadyExistException;
 import com.rowel.taskapi.mapper.TaskUserMapper;
 import com.rowel.taskapi.model.TaskUser;
@@ -12,7 +12,6 @@ import com.rowel.taskapi.security.TaskUserDetails;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -39,11 +38,13 @@ public class AuthService {
   private final JwtService jwtService;
   private AuthenticationManager authenticationManager;
 
-  void createAccount(CreateAccountRequest req) {
+  public void createAccount(CreateAccountRequest req) {
     userRepository
       .findByUsername(req.username())
       .ifPresentOrElse(
-        user -> new UserAlreadyExistException(),
+        user -> {
+          throw new UserAlreadyExistException();
+        },
         () -> {
           TaskUser newUser = taskUserMapper.toEntity(req);
           newUser.setPassword(passwordEncoder.encode(newUser.getPassword()));
@@ -52,7 +53,7 @@ public class AuthService {
       );
   }
 
-  LoginResponse loginAccount(LoginAccountRequest req) {
+  public LoginResponse loginAccount(LoginAccountRequest req) {
     Authentication authReq = new UsernamePasswordAuthenticationToken(
       req.username(),
       req.password()

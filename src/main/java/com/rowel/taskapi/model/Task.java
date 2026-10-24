@@ -70,6 +70,7 @@ public class Task {
 
   private Task(TaskBuilder taskBuilder) {
     this.id = taskBuilder.id;
+    this.user = taskBuilder.user;
     this.name = taskBuilder.name;
     this.description = taskBuilder.description;
     this.status = taskBuilder.status;
@@ -180,6 +181,7 @@ public class Task {
   public static class TaskBuilder {
 
     private Long id;
+    private TaskUser user;
     private String name;
     private String description;
     private TaskStatus status;
@@ -188,6 +190,11 @@ public class Task {
     private Instant completedAt;
     private boolean archived;
     private Instant archivedAt;
+
+    public TaskBuilder user(TaskUser user) {
+      this.user = user;
+      return this;
+    }
 
     public TaskBuilder name(String name) {
       this.name = name;

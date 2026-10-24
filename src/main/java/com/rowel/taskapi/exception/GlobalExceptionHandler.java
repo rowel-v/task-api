@@ -1,6 +1,6 @@
 package com.rowel.taskapi.exception;
 
-import com.rowel.taskapi.dto.response.ApiResponse;
+import com.rowel.taskapi.dto.common.ApiResponse;
 import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -56,6 +56,15 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(TaskNotCompletedException.class)
   public ResponseEntity<ApiResponse<Void>> handleNotCompleted(
     TaskNotCompletedException ex
+  ) {
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(
+      ApiResponse.error(ex.getMessage())
+    );
+  }
+
+  @ExceptionHandler(UserAlreadyExistException.class)
+  public ResponseEntity<ApiResponse<Void>> handleUserAlreadyExists(
+    UserAlreadyExistException ex
   ) {
     return ResponseEntity.status(HttpStatus.CONFLICT).body(
       ApiResponse.error(ex.getMessage())

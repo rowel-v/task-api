@@ -1,9 +1,10 @@
-package com.rowel.taskapi.controller;
+package com.rowel.taskapi.controller.protectedC;
 
-import com.rowel.taskapi.dto.request.CreateTaskRequest;
-import com.rowel.taskapi.dto.request.UpdateTaskRequest;
-import com.rowel.taskapi.dto.response.ApiResponse;
-import com.rowel.taskapi.dto.response.TaskResponse;
+import com.rowel.taskapi.dto.common.ApiResponse;
+import com.rowel.taskapi.dto.task.request.CreateTaskRequest;
+import com.rowel.taskapi.dto.task.request.UpdateTaskRequest;
+import com.rowel.taskapi.dto.task.response.TaskResponse;
+import com.rowel.taskapi.dto.task.response.UserWithTasksResponse;
 import com.rowel.taskapi.service.TaskService;
 import com.rowel.taskapi.shared.TaskStatusAction;
 import jakarta.validation.Valid;
@@ -34,8 +35,8 @@ public class TaskController {
   }
 
   @GetMapping
-  public ResponseEntity<ApiResponse<List<TaskResponse>>> getTasks() {
-    List<TaskResponse> tasks = taskService.getAllTasks();
+  public ResponseEntity<ApiResponse<UserWithTasksResponse>> getTasks() {
+    UserWithTasksResponse tasks = taskService.getAllTasks();
     return ResponseEntity.ok(
       ApiResponse.successful("Tasks All retrieved", tasks)
     );

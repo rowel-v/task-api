@@ -1,0 +1,2 @@
+ALTER TABLE dbo.[user]
+ALTER COLUMN display_name NVARCHAR(100) NULL;

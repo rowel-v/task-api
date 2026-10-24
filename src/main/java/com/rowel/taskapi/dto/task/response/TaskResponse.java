@@ -1,4 +1,4 @@
-package com.rowel.taskapi.dto.response;
+package com.rowel.taskapi.dto.task.response;
 
 import com.rowel.taskapi.model.TaskPriority;
 import com.rowel.taskapi.model.TaskStatus;

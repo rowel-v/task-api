@@ -1,4 +1,4 @@
-package com.rowel.taskapi.dto.response;
+package com.rowel.taskapi.dto.common;
 
 import java.time.Instant;
 

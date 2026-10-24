@@ -30,7 +30,7 @@ public class TaskUser {
   @Column(name = "password_hash", nullable = false, length = 255)
   private String password;
 
-  @Column(name = "display_name", nullable = false, length = 100)
+  @Column(name = "display_name", length = 100)
   private String displayName;
 
   @Column(name = "created_at", nullable = false)
@@ -85,7 +85,21 @@ public class TaskUser {
     return updatedAt;
   }
 
+  @Override
+  public int hashCode() {
+    return TaskUser.class.hashCode();
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) return true;
+    if (!(obj instanceof TaskUser other)) return false;
+
+    return getId() != null && getId().equals(other.getId());
+  }
+
   private TaskUser(UserBuilder userBuilder) {
+    this.id = userBuilder.id;
     this.username = userBuilder.username;
     this.password = userBuilder.password;
     this.displayName = userBuilder.displayName;
@@ -93,10 +107,16 @@ public class TaskUser {
 
   public static class UserBuilder {
 
+    private Long id;
     private String username;
     private String password;
     private String displayName;
-    
+
+    public UserBuilder id(Long id) {
+      this.id = id;
+      return this;
+    }
+
     public UserBuilder username(String username) {
       this.username = username;
       return this;
