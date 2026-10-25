@@ -1,5 +1,6 @@
 package com.rowel.taskapi.security;
 
+import com.rowel.taskapi.exception.user.UserNotFoundException;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -51,9 +52,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return;
       }
 
-      TaskUserDetails user = (TaskUserDetails) userDetailsService.loadByUserId(
-        userId
-      );
+      TaskUserDetails user;
+      try {
+        user = (TaskUserDetails) userDetailsService.loadByUserId(userId);
+      } catch (UserNotFoundException ex) {
+        rejectToken(response);
+        return;
+      }
 
       UsernamePasswordAuthenticationToken authentication =
         UsernamePasswordAuthenticationToken.authenticated(

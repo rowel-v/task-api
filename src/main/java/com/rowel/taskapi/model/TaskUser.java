@@ -9,9 +9,12 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import org.hibernate.annotations.SoftDelete;
+import org.hibernate.annotations.SoftDeleteType;
 
 @Entity
-@Table(name = "user")
+@Table(name = "`user`")
+@SoftDelete(strategy = SoftDeleteType.TIMESTAMP, columnName = "deleted_at")
 public class TaskUser {
 
   public TaskUser() {}
@@ -38,6 +41,9 @@ public class TaskUser {
 
   @Column(name = "updated_at")
   private Instant updatedAt;
+
+  @Column(name = "deleted_at", insertable = false, updatable = false)
+  private Instant deletedAt;
 
   @PrePersist
   private void onCreate() {
@@ -83,6 +89,10 @@ public class TaskUser {
 
   public Instant getUpdatedAt() {
     return updatedAt;
+  }
+
+  public Instant getDeletedAt() {
+    return deletedAt;
   }
 
   @Override

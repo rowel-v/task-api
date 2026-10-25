@@ -4,10 +4,10 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import com.rowel.taskapi.model.TaskUser;
-import com.rowel.taskapi.repository.TaskUserRepository;
+import com.rowel.taskapi.exception.user.UserNotFoundException;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
-import java.util.Optional;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -16,8 +16,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 class JwtAuthenticationFilterTests {
   private final JwtService jwtService = mock(JwtService.class);
-  private final TaskUserRepository repository = mock(TaskUserRepository.class);
-  private final JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtService, repository);
+  private final TaskUserDetailsService userDetailsService = mock(TaskUserDetailsService.class);
+  private final JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtService, userDetailsService);
   private final MockHttpServletRequest request = new MockHttpServletRequest();
   private final MockHttpServletResponse response = new MockHttpServletResponse();
   private final FilterChain chain = mock(FilterChain.class);
@@ -31,7 +31,7 @@ class JwtAuthenticationFilterTests {
   void missingTokenContinuesWithoutAuthentication() throws Exception {
     filter.doFilter(request, response, chain);
     verify(chain).doFilter(request, response);
-    verifyNoInteractions(jwtService, repository);
+    verifyNoInteractions(jwtService, userDetailsService);
     assertNull(SecurityContextHolder.getContext().getAuthentication());
   }
 
@@ -42,14 +42,14 @@ class JwtAuthenticationFilterTests {
     filter.doFilter(request, response, chain);
     assertEquals(401, response.getStatus());
     assertEquals("Bearer error=\"invalid_token\"", response.getHeader("WWW-Authenticate"));
-    verifyNoInteractions(repository, chain);
+    verifyNoInteractions(userDetailsService, chain);
   }
 
   @Test
   void deletedUserReturnsUnauthorized() throws Exception {
     request.addHeader("Authorization", "Bearer valid");
     when(jwtService.extractUserId("valid")).thenReturn(5L);
-    when(repository.findById(5L)).thenReturn(Optional.empty());
+    when(userDetailsService.loadByUserId(5L)).thenThrow(new UserNotFoundException());
     filter.doFilter(request, response, chain);
     assertEquals(401, response.getStatus());
     verifyNoInteractions(chain);
@@ -58,11 +58,9 @@ class JwtAuthenticationFilterTests {
   @Test
   void validTokenSetsAuthenticatedPrincipalWithDatabaseId() throws Exception {
     request.addHeader("Authorization", "Bearer valid");
-    TaskUser user = mock(TaskUser.class);
-    when(user.getId()).thenReturn(5L);
-    when(user.getUsername()).thenReturn("rowel");
+    TaskUser user = TaskUser.builder().id(5L).username("rowel").build();
     when(jwtService.extractUserId("valid")).thenReturn(5L);
-    when(repository.findById(5L)).thenReturn(Optional.of(user));
+    when(userDetailsService.loadByUserId(5L)).thenReturn(new TaskUserDetails(user));
     filter.doFilter(request, response, chain);
     var authentication = SecurityContextHolder.getContext().getAuthentication();
     assertNotNull(authentication);

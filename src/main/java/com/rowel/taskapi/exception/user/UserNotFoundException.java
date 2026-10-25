@@ -1,4 +1,4 @@
-package com.rowel.taskapi.exception;
+package com.rowel.taskapi.exception.user;
 
 public class UserNotFoundException extends RuntimeException {
 

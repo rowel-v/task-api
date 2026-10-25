@@ -14,9 +14,12 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import org.hibernate.annotations.SoftDelete;
+import org.hibernate.annotations.SoftDeleteType;
 
 @Entity
 @Table(name = "task")
+@SoftDelete(strategy = SoftDeleteType.TIMESTAMP, columnName = "deleted_at")
 public class Task {
 
   protected Task() {}
@@ -57,6 +60,9 @@ public class Task {
   private Instant completedAt;
   private Instant archivedAt;
 
+  @Column(name = "deleted_at", insertable = false, updatable = false)
+  private Instant deletedAt;
+
   @PrePersist
   private void onCreate() {
     createdAt = Instant.now();
@@ -83,19 +89,15 @@ public class Task {
 
   @Override
   public int hashCode() {
-    return getClass().hashCode();
+    return Task.class.hashCode();
   }
 
   // two tasks are equal when they have the same id
   @Override
   public boolean equals(Object obj) {
     if (this == obj) return true;
-    if (!(obj instanceof Task)) return false;
-    Task other = (Task) obj;
-    if (id == null) {
-      if (other.id != null) return false;
-    } else if (!id.equals(other.id)) return false;
-    return true;
+    if (!(obj instanceof Task other)) return false;
+    return getId() != null && getId().equals(other.getId());
   }
 
   public Long getId() {
@@ -176,6 +178,10 @@ public class Task {
 
   public void setArchivedAt(Instant archivedAt) {
     this.archivedAt = archivedAt;
+  }
+
+  public Instant getDeletedAt() {
+    return deletedAt;
   }
 
   public static class TaskBuilder {

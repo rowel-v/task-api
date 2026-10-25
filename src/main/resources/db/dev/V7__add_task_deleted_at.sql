@@ -1,0 +1,2 @@
+ALTER TABLE dbo.task
+ADD deleted_at DATETIMEOFFSET(7) NULL;

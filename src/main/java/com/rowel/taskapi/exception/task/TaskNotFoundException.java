@@ -1,4 +1,4 @@
-package com.rowel.taskapi.exception;
+package com.rowel.taskapi.exception.task;
 
 import java.util.List;
 

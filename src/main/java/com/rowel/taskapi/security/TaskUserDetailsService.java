@@ -1,6 +1,6 @@
 package com.rowel.taskapi.security;
 
-import com.rowel.taskapi.exception.UserNotFoundException;
+import com.rowel.taskapi.exception.user.UserNotFoundException;
 import com.rowel.taskapi.model.TaskUser;
 import com.rowel.taskapi.repository.TaskUserRepository;
 import org.springframework.security.core.userdetails.UserDetails;

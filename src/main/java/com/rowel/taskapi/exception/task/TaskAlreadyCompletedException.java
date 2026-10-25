@@ -1,4 +1,4 @@
-package com.rowel.taskapi.exception;
+package com.rowel.taskapi.exception.task;
 
 public class TaskAlreadyCompletedException extends RuntimeException {
 

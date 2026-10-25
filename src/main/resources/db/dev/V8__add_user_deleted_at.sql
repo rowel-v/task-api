@@ -1,0 +1,2 @@
+ALTER TABLE dbo.[user]
+ADD deleted_at DATETIMEOFFSET(7) NULL;

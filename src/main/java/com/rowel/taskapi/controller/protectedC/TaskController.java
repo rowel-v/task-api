@@ -56,9 +56,7 @@ public class TaskController {
   public ResponseEntity<ApiResponse<Void>> deleteTask(
     @RequestParam List<Long> ids
   ) {
-    taskService.deleteTask(ids);
-
-    int count = ids.size();
+    int count = taskService.deleteTask(ids);
     String message =
       count == 1
         ? "Task deleted successfully"
@@ -109,7 +107,7 @@ public class TaskController {
   ) {
     var result = taskService.archiveTasks(ids);
 
-    int count = ids.size();
+    int count = result.size();
     String message =
       count == 1
         ? "Task archived successfully"

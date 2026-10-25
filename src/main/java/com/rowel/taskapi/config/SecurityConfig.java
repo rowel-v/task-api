@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -28,6 +29,7 @@ public class SecurityConfig {
     JwtAuthenticationFilter jwtAuthenticationFilter
   ) throws Exception {
     return http
+      .cors(Customizer.withDefaults())
       .addFilterBefore(
         jwtAuthenticationFilter,
         UsernamePasswordAuthenticationFilter.class
@@ -67,7 +69,9 @@ public class SecurityConfig {
     UserDetailsService userDetailsService,
     PasswordEncoder passwordEncoder
   ) {
-    var provider = new DaoAuthenticationProvider(userDetailsService);
+    DaoAuthenticationProvider provider = new DaoAuthenticationProvider(
+      userDetailsService
+    );
 
     provider.setPasswordEncoder(passwordEncoder);
 

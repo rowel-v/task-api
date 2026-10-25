@@ -4,10 +4,11 @@ import com.rowel.taskapi.dto.task.request.CreateTaskRequest;
 import com.rowel.taskapi.dto.task.request.UpdateTaskRequest;
 import com.rowel.taskapi.dto.task.response.TaskResponse;
 import com.rowel.taskapi.dto.task.response.UserWithTasksResponse;
-import com.rowel.taskapi.exception.TaskAlreadyCompletedException;
-import com.rowel.taskapi.exception.TaskNotCompletedException;
-import com.rowel.taskapi.exception.TaskNotFoundException;
-import com.rowel.taskapi.exception.UserNotFoundException;
+import com.rowel.taskapi.exception.task.InvalidTaskIdsException;
+import com.rowel.taskapi.exception.task.TaskAlreadyCompletedException;
+import com.rowel.taskapi.exception.task.TaskNotCompletedException;
+import com.rowel.taskapi.exception.task.TaskNotFoundException;
+import com.rowel.taskapi.exception.user.UserNotFoundException;
 import com.rowel.taskapi.mapper.TaskMapper;
 import com.rowel.taskapi.model.Task;
 import com.rowel.taskapi.model.TaskStatus;
@@ -102,9 +103,21 @@ public class TaskService {
       .orElseThrow(() -> new TaskNotFoundException(id));
   }
 
+  private List<Long> validatedTaskIds(List<Long> ids) {
+    if (
+      ids == null ||
+      ids.isEmpty() ||
+      ids.stream().anyMatch(id -> id == null || id <= 0)
+    ) {
+      throw new InvalidTaskIdsException();
+    }
+    return ids.stream().distinct().toList();
+  }
+
   @SuppressWarnings("null")
   @Transactional
-  public void deleteTask(List<Long> tasksIds) {
+  public int deleteTask(List<Long> tasksIds) {
+    tasksIds = validatedTaskIds(tasksIds);
     List<Task> tasks = taskRepository.findAllByIdInAndUser_Id(
       tasksIds,
       currentUserId()
@@ -126,6 +139,7 @@ public class TaskService {
     }
 
     taskRepository.deleteAll(tasks);
+    return tasks.size();
   }
 
   public TaskResponse updateTaskStatus(
@@ -178,6 +192,7 @@ public class TaskService {
   @SuppressWarnings("null")
   @Transactional
   public List<TaskResponse> archiveTasks(List<Long> taskIds) {
+    taskIds = validatedTaskIds(taskIds);
     List<Task> tasks = taskRepository.findAllByIdInAndUser_Id(
       taskIds,
       currentUserId()
@@ -216,8 +231,9 @@ public class TaskService {
       t.setArchivedAt(now);
     });
 
-    taskRepository.saveAll(tasks);
+    // Flush updates so @PreUpdate sets updatedAt before mapping to response DTOs.
+    List<Task> savedTasks = taskRepository.saveAllAndFlush(tasks);
 
-    return tasks.stream().map(taskMapper::taskToResponse).toList();
+    return savedTasks.stream().map(taskMapper::taskToResponse).toList();
   }
 }
