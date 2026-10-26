@@ -16,10 +16,10 @@ public record ApiResponse<T>(
 ) {
   
   public static <T> ApiResponse<T> successful(String message, T data) {
-    return new ApiResponse<T>(message, data, Instant.now());
+    return new ApiResponse<>(message, data, Instant.now());
   }
 
   public static <T> ApiResponse<T> error(String message) {
-    return new ApiResponse<T>(message, null, Instant.now());
+    return new ApiResponse<>(message, null, Instant.now());
   }
 }

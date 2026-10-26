@@ -1,6 +1,5 @@
 package com.rowel.taskapi.config;
 
-import com.rowel.taskapi.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -18,6 +17,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import com.rowel.taskapi.security.JwtAuthenticationFilter;
 
 @Configuration
 public class SecurityConfig {
@@ -42,6 +43,14 @@ public class SecurityConfig {
       )
       .authorizeHttpRequests(auth ->
         auth
+          .requestMatchers(
+            HttpMethod.GET,
+            "/v3/api-docs",
+            "/v3/api-docs/**",
+            "/swagger-ui.html",
+            "/swagger-ui/**"
+          )
+          .permitAll()
           .requestMatchers(
             HttpMethod.POST,
             "/api/auth/register",

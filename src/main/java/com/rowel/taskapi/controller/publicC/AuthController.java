@@ -1,19 +1,25 @@
 package com.rowel.taskapi.controller.publicC;
 
-import com.rowel.taskapi.dto.auth.request.CreateAccountRequest;
-import com.rowel.taskapi.dto.auth.request.LoginAccountRequest;
-import com.rowel.taskapi.dto.auth.response.LoginResponse;
-import com.rowel.taskapi.dto.common.ApiResponse;
-import com.rowel.taskapi.service.AuthService;
-import jakarta.validation.Valid;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.rowel.taskapi.dto.auth.request.CreateAccountRequest;
+import com.rowel.taskapi.dto.auth.request.LoginAccountRequest;
+import com.rowel.taskapi.dto.auth.response.LoginResponse;
+import com.rowel.taskapi.dto.common.ApiResponse;
+import com.rowel.taskapi.service.AuthService;
+
+import jakarta.validation.Valid;
+
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping(
+  value = "/api/auth",
+  produces = MediaType.APPLICATION_JSON_VALUE
+)
 public class AuthController {
 
   private final AuthService authService;
