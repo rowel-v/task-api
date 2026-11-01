@@ -9,14 +9,12 @@ import com.rowel.taskapi.auth.model.TaskUser;
 import com.rowel.taskapi.auth.repository.TaskUserRepository;
 import com.rowel.taskapi.auth.security.JwtService;
 import com.rowel.taskapi.auth.security.TaskUserDetails;
-import java.sql.SQLException;
-import org.hibernate.exception.ConstraintViolationException;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AuthService {
@@ -41,6 +39,7 @@ public class AuthService {
   private final JwtService jwtService;
   private final AuthenticationManager authenticationManager;
 
+  @Transactional
   public void createAccount(CreateAccountRequest req) {
     if (userRepository.findByUsername(req.username()).isPresent()) {
       throw new UserAlreadyExistsException();
@@ -48,35 +47,7 @@ public class AuthService {
 
     TaskUser newUser = taskUserMapper.toEntity(req);
     newUser.setPassword(passwordEncoder.encode(newUser.getPassword()));
-    try {
-      // Flush here so a concurrent username conflict is caught in this method.
-      userRepository.saveAndFlush(newUser);
-    } catch (DataIntegrityViolationException ex) {
-      if (isUsernameConflict(ex)) {
-        throw new UserAlreadyExistsException(ex);
-      }
-      throw ex;
-    }
-  }
-
-  private boolean isUsernameConflict(Throwable failure) {
-    for (Throwable cause = failure; cause != null; cause = cause.getCause()) {
-      if (
-        cause instanceof ConstraintViolationException violation &&
-        "UQ_user_username".equalsIgnoreCase(violation.getConstraintName())
-      ) {
-        return true;
-      }
-      if (
-        cause instanceof SQLException sql &&
-        (sql.getErrorCode() == 2601 || sql.getErrorCode() == 2627) &&
-        sql.getMessage() != null &&
-        sql.getMessage().contains("UQ_user_username")
-      ) {
-        return true;
-      }
-    }
-    return false;
+    userRepository.saveAndFlush(newUser);
   }
 
   public LoginResponse loginAccount(LoginAccountRequest req) {

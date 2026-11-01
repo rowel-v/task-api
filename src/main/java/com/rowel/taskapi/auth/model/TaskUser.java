@@ -1,5 +1,11 @@
 package com.rowel.taskapi.auth.model;
 
+import java.time.Instant;
+
+import org.hibernate.annotations.SoftDelete;
+import org.hibernate.annotations.SoftDeleteType;
+import org.springframework.modulith.NamedInterface;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -8,10 +14,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import java.time.Instant;
-import org.hibernate.annotations.SoftDelete;
-import org.hibernate.annotations.SoftDeleteType;
-import org.springframework.modulith.NamedInterface;
 
 @NamedInterface(name = "model")
 @Entity
@@ -34,9 +36,6 @@ public class TaskUser {
 
   @Column(name = "password_hash", nullable = false, length = 255)
   private String password;
-
-  @Column(name = "display_name", length = 100)
-  private String displayName;
 
   @Column(name = "created_at", nullable = false)
   private Instant createdAt;
@@ -77,14 +76,6 @@ public class TaskUser {
     this.username = username;
   }
 
-  public String getDisplayName() {
-    return displayName;
-  }
-
-  public void setDisplayName(String displayName) {
-    this.displayName = displayName;
-  }
-
   public Instant getCreatedAt() {
     return createdAt;
   }
@@ -114,7 +105,6 @@ public class TaskUser {
     this.id = userBuilder.id;
     this.username = userBuilder.username;
     this.password = userBuilder.password;
-    this.displayName = userBuilder.displayName;
   }
 
   public static class UserBuilder {
@@ -122,7 +112,6 @@ public class TaskUser {
     private Long id;
     private String username;
     private String password;
-    private String displayName;
 
     public UserBuilder id(Long id) {
       this.id = id;
@@ -136,11 +125,6 @@ public class TaskUser {
 
     public UserBuilder password(String password) {
       this.password = password;
-      return this;
-    }
-
-    public UserBuilder displayName(String displayName) {
-      this.displayName = displayName;
       return this;
     }
 

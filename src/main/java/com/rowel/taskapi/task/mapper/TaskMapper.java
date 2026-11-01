@@ -46,11 +46,12 @@ public class TaskMapper {
   // Maps the user and their tasks to a UserWithTasksResponse DTO.
   public UserWithTasksResponse tasksToResponse(
     TaskUser user,
+    String displayName,
     List<Task> tasks
   ) {
     return new UserWithTasksResponse(
       user.getUsername(),
-      user.getDisplayName(),
+      displayName,
       tasks.stream().map(this::taskToResponse).toList()
     );
   }

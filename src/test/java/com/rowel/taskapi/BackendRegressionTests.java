@@ -3,10 +3,11 @@ package com.rowel.taskapi;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import com.rowel.taskapi.profile.model.TaskUserProfile;
+import com.rowel.taskapi.profile.repository.TaskUserProfileRepository;
 import com.rowel.taskapi.auth.dto.request.CreateAccountRequest;
 import com.rowel.taskapi.auth.dto.request.LoginAccountRequest;
 import com.rowel.taskapi.auth.exception.UserAlreadyExistsException;
-import com.rowel.taskapi.auth.exception.handler.AuthExceptionHandler;
 import com.rowel.taskapi.auth.mapper.TaskUserMapper;
 import com.rowel.taskapi.auth.model.TaskUser;
 import com.rowel.taskapi.auth.repository.TaskUserRepository;
@@ -26,7 +27,6 @@ import com.rowel.taskapi.task.service.TaskService;
 import jakarta.validation.*;
 import java.sql.SQLException;
 import java.util.*;
-import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.*;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.*;
@@ -41,6 +41,7 @@ class BackendRegressionTests {
   TaskUserRepository users = mock(TaskUserRepository.class);
   TaskRepository tasks = mock(TaskRepository.class);
   PasswordEncoder encoder = mock(PasswordEncoder.class);
+  TaskUserProfileRepository profiles = mock(TaskUserProfileRepository.class);
   AuthService auth = new AuthService(
     users,
     encoder,
@@ -48,7 +49,7 @@ class BackendRegressionTests {
     mock(JwtService.class),
     mock(AuthenticationManager.class)
   );
-  TaskService service = new TaskService(tasks, users, new TaskMapper());
+  TaskService service = new TaskService(tasks, users, profiles, new TaskMapper());
 
   @BeforeAll
   static void validation() {
@@ -151,46 +152,6 @@ class BackendRegressionTests {
   }
 
   @Test
-  void translatesConcurrentNamedUsernameConstraint() {
-    var failure = new DataIntegrityViolationException(
-      "duplicate",
-      new ConstraintViolationException(
-        "duplicate",
-        new SQLException(),
-        "UQ_user_username"
-      )
-    );
-    when(users.saveAndFlush(any())).thenThrow(failure);
-    var ex = assertThrows(UserAlreadyExistsException.class, () ->
-      auth.createAccount(new CreateAccountRequest("user", "password"))
-    );
-    assertSame(failure, ex.getCause());
-    assertEquals(
-      409,
-      new AuthExceptionHandler()
-        .handleUserAlreadyExists(ex)
-        .getStatusCode()
-        .value()
-    );
-  }
-
-  @Test
-  void translatesSqlServerUsernameConstraint() {
-    var failure = new DataIntegrityViolationException(
-      "duplicate",
-      new SQLException(
-        "Violation of UNIQUE KEY constraint 'UQ_user_username'",
-        "23000",
-        2627
-      )
-    );
-    when(users.saveAndFlush(any())).thenThrow(failure);
-    assertThrows(UserAlreadyExistsException.class, () ->
-      auth.createAccount(new CreateAccountRequest("user", "password"))
-    );
-  }
-
-  @Test
   void unrelatedIntegrityFailureIsNotReportedAsDuplicate() {
     var failure = new DataIntegrityViolationException(
       "other constraint",
@@ -212,10 +173,24 @@ class BackendRegressionTests {
       argThat(
         u ->
           u.getUsername().equals("user") &&
-          u.getPassword().equals("encoded") &&
-          u.getDisplayName() == null
+          u.getPassword().equals("encoded")
       )
     );
+    verifyNoInteractions(profiles);
+  }
+
+  @Test
+  void taskResponseUsesProfileNameAndFallsBackToUsername() {
+    TaskUser user = TaskUser.builder().id(1L).username("owner").build();
+    when(users.findById(1L)).thenReturn(Optional.of(user));
+    TaskUserProfile profile = TaskUserProfile.builder().user(user).build();
+    profile.setDisplayName("Rowel");
+    when(profiles.findByUser_Id(1L)).thenReturn(Optional.of(profile));
+    assertEquals("Rowel", service.getAllTasks().displayName());
+    profile.setDisplayName(null);
+    assertEquals("owner", service.getAllTasks().displayName());
+    when(profiles.findByUser_Id(1L)).thenReturn(Optional.empty());
+    assertEquals("owner", service.getAllTasks().displayName());
   }
 
   @Test

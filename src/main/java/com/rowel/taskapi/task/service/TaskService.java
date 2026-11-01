@@ -4,6 +4,8 @@ import com.rowel.taskapi.auth.exception.UserNotFoundException;
 import com.rowel.taskapi.auth.model.TaskUser;
 import com.rowel.taskapi.auth.repository.TaskUserRepository;
 import com.rowel.taskapi.auth.security.TaskUserDetails;
+import com.rowel.taskapi.profile.model.TaskUserProfile;
+import com.rowel.taskapi.profile.repository.TaskUserProfileRepository;
 import com.rowel.taskapi.task.dto.request.CreateTaskRequest;
 import com.rowel.taskapi.task.dto.request.UpdateTaskRequest;
 import com.rowel.taskapi.task.dto.response.TaskResponse;
@@ -17,7 +19,6 @@ import com.rowel.taskapi.task.model.Task;
 import com.rowel.taskapi.task.model.TaskStatus;
 import com.rowel.taskapi.task.model.TaskStatusAction;
 import com.rowel.taskapi.task.repository.TaskRepository;
-
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
@@ -33,15 +34,18 @@ public class TaskService {
 
   private final TaskRepository taskRepository;
   private final TaskUserRepository userRepository;
+  private final TaskUserProfileRepository userProfileRepository;
   private final TaskMapper taskMapper;
 
   public TaskService(
     TaskRepository taskRepository,
     TaskUserRepository userRepository,
+    TaskUserProfileRepository userProfileRepository,
     TaskMapper taskMapper
   ) {
     this.taskRepository = taskRepository;
     this.userRepository = userRepository;
+    this.userProfileRepository = userProfileRepository;
     this.taskMapper = taskMapper;
   }
 
@@ -70,9 +74,16 @@ public class TaskService {
 
   public UserWithTasksResponse getAllTasks() {
     TaskUser user = currentUser();
+
+    String userDisplayName = userProfileRepository
+      .findByUser_Id(currentUserId())
+      .map(TaskUserProfile::getDisplayName)
+      .filter(name -> !name.isBlank())
+      .orElse(user.getUsername());
+
     List<Task> tasks = taskRepository.findByUser(user);
 
-    return taskMapper.tasksToResponse(user, tasks);
+    return taskMapper.tasksToResponse(user, userDisplayName, tasks);
   }
 
   public TaskResponse createTask(CreateTaskRequest req) {
