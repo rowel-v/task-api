@@ -1,9 +1,7 @@
 package com.rowel.taskapi.task.service;
 
-import com.rowel.taskapi.auth.exception.UserNotFoundException;
 import com.rowel.taskapi.auth.model.TaskUser;
-import com.rowel.taskapi.auth.repository.TaskUserRepository;
-import com.rowel.taskapi.auth.security.TaskUserDetails;
+import com.rowel.taskapi.auth.security.CurrentUserService;
 import com.rowel.taskapi.profile.model.TaskUserProfile;
 import com.rowel.taskapi.profile.repository.TaskUserProfileRepository;
 import com.rowel.taskapi.task.dto.request.CreateTaskRequest;
@@ -23,60 +21,34 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class TaskService {
 
+  private final CurrentUserService authenticatedUser;
   private final TaskRepository taskRepository;
-  private final TaskUserRepository userRepository;
   private final TaskUserProfileRepository userProfileRepository;
   private final TaskMapper taskMapper;
 
   public TaskService(
+    CurrentUserService authenticatedUser,
     TaskRepository taskRepository,
-    TaskUserRepository userRepository,
     TaskUserProfileRepository userProfileRepository,
     TaskMapper taskMapper
   ) {
+    this.authenticatedUser = authenticatedUser;
     this.taskRepository = taskRepository;
-    this.userRepository = userRepository;
     this.userProfileRepository = userProfileRepository;
     this.taskMapper = taskMapper;
   }
 
-  private Long currentUserId() {
-    Authentication authentication =
-      SecurityContextHolder.getContext().getAuthentication();
-
-    if (
-      authentication == null ||
-      !authentication.isAuthenticated() ||
-      !(authentication.getPrincipal() instanceof TaskUserDetails principal)
-    ) {
-      throw new AuthenticationCredentialsNotFoundException(
-        "Authentication is required"
-      );
-    }
-
-    return principal.getUserId();
-  }
-
-  private TaskUser currentUser() {
-    return userRepository
-      .findById(currentUserId())
-      .orElseThrow(UserNotFoundException::new);
-  }
-
   public UserWithTasksResponse getAllTasks() {
-    TaskUser user = currentUser();
+    TaskUser user = authenticatedUser.get();
 
     String userDisplayName = userProfileRepository
-      .findByUser_Id(currentUserId())
+      .findByUser_Id(authenticatedUser.getId())
       .map(TaskUserProfile::getDisplayName)
       .filter(name -> !name.isBlank())
       .orElse(user.getUsername());
@@ -87,7 +59,7 @@ public class TaskService {
   }
 
   public TaskResponse createTask(CreateTaskRequest req) {
-    TaskUser user = currentUser();
+    TaskUser user = authenticatedUser.get();
     Task task = taskMapper.requestToTask(req, user);
     Task saved = taskRepository.save(task);
     return taskMapper.taskToResponse(saved);
@@ -95,7 +67,7 @@ public class TaskService {
 
   public TaskResponse updateTask(Long id, UpdateTaskRequest req) {
     return taskRepository
-      .findByIdAndUser_Id(id, currentUserId())
+      .findByIdAndUser_Id(id, authenticatedUser.getId())
       .map(task -> {
         // should not update task if already completed
         if (task.getStatus().equals(TaskStatus.COMPLETED)) {
@@ -132,7 +104,7 @@ public class TaskService {
     tasksIds = validatedTaskIds(tasksIds);
     List<Task> tasks = taskRepository.findAllByIdInAndUser_Id(
       tasksIds,
-      currentUserId()
+      authenticatedUser.getId()
     );
 
     Set<Long> foundIds = tasks
@@ -159,7 +131,7 @@ public class TaskService {
     TaskStatusAction taskStatusAction
   ) {
     return taskRepository
-      .findByIdAndUser_Id(taskId, currentUserId())
+      .findByIdAndUser_Id(taskId, authenticatedUser.getId())
       .map(targetTask -> {
         switch (taskStatusAction) {
           case START -> {
@@ -184,7 +156,7 @@ public class TaskService {
 
   public TaskResponse reopenTask(Long id, UpdateTaskRequest changes) {
     return taskRepository
-      .findByIdAndUser_Id(id, currentUserId())
+      .findByIdAndUser_Id(id, authenticatedUser.getId())
       .map(task -> {
         if (task.getStatus() != TaskStatus.COMPLETED) {
           throw new TaskNotCompletedException(List.of(id));
@@ -207,7 +179,7 @@ public class TaskService {
     taskIds = validatedTaskIds(taskIds);
     List<Task> tasks = taskRepository.findAllByIdInAndUser_Id(
       taskIds,
-      currentUserId()
+      authenticatedUser.getId()
     );
 
     // ids the client sent that don't exist

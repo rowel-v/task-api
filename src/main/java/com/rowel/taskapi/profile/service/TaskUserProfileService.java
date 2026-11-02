@@ -2,6 +2,7 @@ package com.rowel.taskapi.profile.service;
 
 import com.rowel.taskapi.auth.exception.UserNotFoundException;
 import com.rowel.taskapi.auth.repository.TaskUserRepository;
+import com.rowel.taskapi.auth.security.CurrentUserService;
 import com.rowel.taskapi.auth.security.TaskUserDetails;
 import com.rowel.taskapi.profile.dto.request.SaveTaskUserProfileRequest;
 import com.rowel.taskapi.profile.dto.response.ProfilePhotoResponse;
@@ -28,31 +29,54 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-@NamedInterface("service")
+@NamedInterface("task_user_profile_service")
 @Service
 public class TaskUserProfileService {
 
-  private static final long MAX_PHOTO_BYTES = 2 * 1024 * 1024;
-  private static final int MAX_DIMENSION = 4096;
+  private final CurrentUserService authenticatedUser;
   private final TaskUserProfileRepository taskUserProfileRepository;
   private final TaskUserRepository taskUserRepository;
   private final TaskUserProfileMapper taskUserProfileMapper;
 
   public TaskUserProfileService(
+    CurrentUserService authenticatedUser,
     TaskUserProfileRepository taskUserProfileRepository,
     TaskUserRepository taskUserRepository,
     TaskUserProfileMapper taskUserProfileMapper
   ) {
+    this.authenticatedUser = authenticatedUser;
     this.taskUserProfileRepository = taskUserProfileRepository;
     this.taskUserRepository = taskUserRepository;
     this.taskUserProfileMapper = taskUserProfileMapper;
+  }
+
+  private TaskUserProfile findUserProfile() {
+    return taskUserProfileRepository
+      .findByUser_Id(authenticatedUser.getId())
+      .orElseThrow(ProfileNotFoundException::new);
+  }
+
+  private TaskUserProfile findOrCreateUserProfile(Long userId) {
+    return taskUserProfileRepository
+      .findByUser_Id(userId)
+      .orElseGet(() ->
+        TaskUserProfile.builder()
+          .user(
+            taskUserRepository
+              .findById(userId)
+              .orElseThrow(UserNotFoundException::new)
+          )
+          .build()
+      );
   }
 
   @Transactional
   public TaskUserProfileResponse saveUserProfile(
     SaveTaskUserProfileRequest req
   ) {
-    TaskUserProfile profile = findOrCreateUserProfile(currentUserId());
+    TaskUserProfile profile = findOrCreateUserProfile(
+      authenticatedUser.getId()
+    );
 
     taskUserProfileMapper.updateProfile(req, profile);
     return taskUserProfileMapper.toResponse(
@@ -74,9 +98,12 @@ public class TaskUserProfileService {
     );
   }
 
+  private static final long MAX_PHOTO_BYTES = 2 * 1024 * 1024;
+  private static final int MAX_DIMENSION = 4096;
+
   @Transactional
   public void uploadUserProfilePhoto(MultipartFile file) {
-    Long userId = currentUserId();
+    Long userId = authenticatedUser.getId();
     if (file.isEmpty() || file.getSize() > MAX_PHOTO_BYTES) {
       throw new InvalidProfilePhotoException(
         "Choose a JPEG or PNG image up to 2 MB."
@@ -128,36 +155,5 @@ public class TaskUserProfileService {
     } catch (IOException | IllegalArgumentException ex) {
       throw new InvalidProfilePhotoException();
     }
-  }
-
-  TaskUserProfile findUserProfile() {
-    return taskUserProfileRepository
-      .findByUser_Id(currentUserId())
-      .orElseThrow(ProfileNotFoundException::new);
-  }
-
-  private TaskUserProfile findOrCreateUserProfile(Long userId) {
-    return taskUserProfileRepository.findByUser_Id(userId).orElseGet(() ->
-      TaskUserProfile.builder()
-        .user(taskUserRepository.findById(userId).orElseThrow(UserNotFoundException::new))
-        .build()
-    );
-  }
-
-  private Long currentUserId() {
-    Authentication authentication =
-      SecurityContextHolder.getContext().getAuthentication();
-
-    if (
-      authentication == null ||
-      !authentication.isAuthenticated() ||
-      !(authentication.getPrincipal() instanceof TaskUserDetails principal)
-    ) {
-      throw new AuthenticationCredentialsNotFoundException(
-        "Authentication is required"
-      );
-    }
-
-    return principal.getUserId();
   }
 }

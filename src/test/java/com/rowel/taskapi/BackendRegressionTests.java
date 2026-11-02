@@ -28,6 +28,7 @@ import jakarta.validation.*;
 import java.sql.SQLException;
 import java.util.*;
 import org.junit.jupiter.api.*;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -42,14 +43,17 @@ class BackendRegressionTests {
   TaskRepository tasks = mock(TaskRepository.class);
   PasswordEncoder encoder = mock(PasswordEncoder.class);
   TaskUserProfileRepository profiles = mock(TaskUserProfileRepository.class);
+  CurrentUserService currentUser = new CurrentUserService(users);
+  ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
   AuthService auth = new AuthService(
     users,
     encoder,
     new TaskUserMapper(),
     mock(JwtService.class),
-    mock(AuthenticationManager.class)
+    mock(AuthenticationManager.class),
+    events
   );
-  TaskService service = new TaskService(tasks, users, profiles, new TaskMapper());
+  TaskService service = new TaskService(currentUser, tasks, profiles, new TaskMapper());
 
   @BeforeAll
   static void validation() {

@@ -5,6 +5,7 @@ import static org.mockito.Mockito.*;
 
 import com.rowel.taskapi.auth.model.TaskUser;
 import com.rowel.taskapi.auth.repository.TaskUserRepository;
+import com.rowel.taskapi.auth.security.CurrentUserService;
 import com.rowel.taskapi.auth.security.TaskUserDetails;
 import com.rowel.taskapi.profile.exception.InvalidProfilePhotoException;
 import com.rowel.taskapi.profile.exception.ProfilePhotoNotFoundException;
@@ -28,7 +29,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 class ProfilePhotoTests {
   private final TaskUserProfileRepository profiles = mock(TaskUserProfileRepository.class);
   private final TaskUserRepository users = mock(TaskUserRepository.class);
-  private final TaskUserProfileService service = new TaskUserProfileService(profiles, users, new TaskUserProfileMapper());
+  private final TaskUserProfileService service = new TaskUserProfileService(
+    new CurrentUserService(users), profiles, users, new TaskUserProfileMapper()
+  );
 
   @BeforeEach
   void authenticate() {

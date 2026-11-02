@@ -7,6 +7,7 @@ import static org.mockito.Mockito.*;
 import com.rowel.taskapi.auth.model.TaskUser;
 import com.rowel.taskapi.auth.repository.TaskUserRepository;
 import com.rowel.taskapi.auth.exception.UserNotFoundException;
+import com.rowel.taskapi.auth.security.CurrentUserService;
 import com.rowel.taskapi.auth.security.TaskUserDetails;
 import com.rowel.taskapi.profile.dto.request.SaveTaskUserProfileRequest;
 import com.rowel.taskapi.profile.mapper.TaskUserProfileMapper;
@@ -27,7 +28,7 @@ class TaskUserProfileServiceTests {
   private final TaskUserProfileRepository profiles = mock(TaskUserProfileRepository.class);
   private final TaskUserRepository users = mock(TaskUserRepository.class);
   private final TaskUserProfileService service = new TaskUserProfileService(
-    profiles, users, new TaskUserProfileMapper()
+    new CurrentUserService(users), profiles, users, new TaskUserProfileMapper()
   );
 
   @AfterEach
