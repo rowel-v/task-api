@@ -7,7 +7,6 @@ import com.rowel.taskapi.task.dto.response.TaskResponse;
 import com.rowel.taskapi.task.dto.response.UserWithTasksResponse;
 import com.rowel.taskapi.task.model.Task;
 import com.rowel.taskapi.task.model.TaskStatus;
-
 import java.util.List;
 import org.springframework.stereotype.Component;
 
@@ -47,11 +46,15 @@ public class TaskMapper {
   public UserWithTasksResponse tasksToResponse(
     TaskUser user,
     String displayName,
+    String timeZone,
+    String bio,
     List<Task> tasks
   ) {
     return new UserWithTasksResponse(
       user.getUsername(),
       displayName,
+      timeZone,
+      bio,
       tasks.stream().map(this::taskToResponse).toList()
     );
   }

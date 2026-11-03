@@ -7,7 +7,11 @@ import java.util.List;
 public record UserWithTasksResponse(
   @Schema(requiredMode = RequiredMode.REQUIRED) String username,
 
-  @Schema(requiredMode = RequiredMode.REQUIRED) String displayName,
+  @Schema(nullable = true) String displayName,
+
+  @Schema(nullable = true) String timeZone,
+
+  @Schema(nullable = true) String bio,
 
   @Schema(requiredMode = RequiredMode.REQUIRED) List<TaskResponse> tasks
 ) {}

@@ -19,6 +19,7 @@ import com.rowel.taskapi.task.model.TaskStatusAction;
 import com.rowel.taskapi.task.repository.TaskRepository;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
@@ -47,15 +48,31 @@ public class TaskService {
   public UserWithTasksResponse getAllTasks() {
     TaskUser user = authenticatedUser.get();
 
-    String userDisplayName = userProfileRepository
-      .findByUser_Id(authenticatedUser.getId())
+    Optional<TaskUserProfile> profile = userProfileRepository.findByUser_Id(
+      user.getId()
+    );
+
+    String userDisplayName = profile
       .map(TaskUserProfile::getDisplayName)
-      .filter(name -> !name.isBlank())
-      .orElse(user.getUsername());
+      .orElse(null);
+
+    String userTimeZone = profile
+      .map(TaskUserProfile::getTimeZone)
+      .orElse(null);
+
+    String userBio = profile
+      .map(TaskUserProfile::getBio)
+      .orElse(null);
 
     List<Task> tasks = taskRepository.findByUser(user);
 
-    return taskMapper.tasksToResponse(user, userDisplayName, tasks);
+    return taskMapper.tasksToResponse(
+      user,
+      userDisplayName,
+      userTimeZone,
+      userBio,
+      tasks
+    );
   }
 
   public TaskResponse createTask(CreateTaskRequest req) {
