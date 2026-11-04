@@ -25,6 +25,7 @@ public class AuthService {
   private final PasswordEncoder passwordEncoder;
   private final TaskUserMapper taskUserMapper;
   private final JwtService jwtService;
+
   private final AuthenticationManager authenticationManager;
   private final ApplicationEventPublisher eventPublisher;
 
@@ -70,5 +71,9 @@ public class AuthService {
     return new LoginResponse(
       jwtService.generateToken(taskUserMapper.toEntity(taskUser))
     );
+  }
+
+  public JwtService getJwtService() {
+    return jwtService;
   }
 }

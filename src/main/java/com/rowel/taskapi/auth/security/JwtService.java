@@ -1,5 +1,6 @@
 package com.rowel.taskapi.auth.security;
 
+import com.rowel.taskapi.auth.model.TaskUser;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -11,8 +12,6 @@ import java.util.Date;
 import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
-import com.rowel.taskapi.auth.model.TaskUser;
 
 @Service
 public class JwtService {
@@ -77,5 +76,9 @@ public class JwtService {
     } catch (NumberFormatException ex) {
       throw new JwtException("Invalid token subject", ex);
     }
+  }
+
+  public Duration getExpiration() {
+    return expiration;
   }
 }

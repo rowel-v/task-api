@@ -8,6 +8,7 @@ import com.rowel.taskapi.auth.model.TaskUser;
 
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
+import jakarta.servlet.http.Cookie;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -38,17 +39,17 @@ class JwtAuthenticationFilterTests {
 
   @Test
   void invalidTokenReturnsUnauthorizedWithoutContinuing() throws Exception {
-    request.addHeader("Authorization", "Bearer invalid");
+    request.setCookies(new Cookie("access_token", "invalid"));
     when(jwtService.extractUserId("invalid")).thenThrow(new JwtException("Invalid"));
     filter.doFilter(request, response, chain);
     assertEquals(401, response.getStatus());
-    assertEquals("Bearer error=\"invalid_token\"", response.getHeader("WWW-Authenticate"));
+    assertNull(response.getHeader("WWW-Authenticate"));
     verifyNoInteractions(userDetailsService, chain);
   }
 
   @Test
   void deletedUserReturnsUnauthorized() throws Exception {
-    request.addHeader("Authorization", "Bearer valid");
+    request.setCookies(new Cookie("access_token", "valid"));
     when(jwtService.extractUserId("valid")).thenReturn(5L);
     when(userDetailsService.loadByUserId(5L)).thenThrow(new UserNotFoundException());
     filter.doFilter(request, response, chain);
@@ -58,7 +59,7 @@ class JwtAuthenticationFilterTests {
 
   @Test
   void validTokenSetsAuthenticatedPrincipalWithDatabaseId() throws Exception {
-    request.addHeader("Authorization", "Bearer valid");
+    request.setCookies(new Cookie("access_token", "valid"));
     TaskUser user = TaskUser.builder().id(5L).username("rowel").build();
     when(jwtService.extractUserId("valid")).thenReturn(5L);
     when(userDetailsService.loadByUserId(5L)).thenReturn(new TaskUserDetails(user));
@@ -69,5 +70,41 @@ class JwtAuthenticationFilterTests {
     assertEquals(5L, ((TaskUserDetails) authentication.getPrincipal()).getUserId());
     assertNull(authentication.getCredentials());
     verify(chain).doFilter(request, response);
+  }
+
+  @Test
+  void unrelatedCookieContinuesWithoutAuthentication() throws Exception {
+    request.setCookies(new Cookie("XSRF-TOKEN", "csrf"));
+    filter.doFilter(request, response, chain);
+    verify(chain).doFilter(request, response);
+    verifyNoInteractions(jwtService, userDetailsService);
+  }
+
+  @Test
+  void blankTokenContinuesWithoutAuthentication() throws Exception {
+    request.setCookies(new Cookie("access_token", ""));
+    filter.doFilter(request, response, chain);
+    verify(chain).doFilter(request, response);
+    verifyNoInteractions(jwtService, userDetailsService);
+  }
+
+  @Test
+  void logoutCanProceedWithAnExpiredCookie() throws Exception {
+    request.setMethod("POST");
+    request.setRequestURI("/api/auth/logout");
+    request.setCookies(new Cookie("access_token", "expired"));
+    filter.doFilter(request, response, chain);
+    verify(chain).doFilter(request, response);
+    verifyNoInteractions(jwtService, userDetailsService);
+  }
+
+  @Test
+  void loginCanProceedWithAnExpiredCookie() throws Exception {
+    request.setMethod("POST");
+    request.setRequestURI("/api/auth/login");
+    request.setCookies(new Cookie("access_token", "expired"));
+    filter.doFilter(request, response, chain);
+    verify(chain).doFilter(request, response);
+    verifyNoInteractions(jwtService, userDetailsService);
   }
 }

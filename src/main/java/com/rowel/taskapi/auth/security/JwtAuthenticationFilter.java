@@ -1,22 +1,19 @@
 package com.rowel.taskapi.auth.security;
 
+import com.rowel.taskapi.auth.exception.UserNotFoundException;
+import io.jsonwebtoken.JwtException;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-
-import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-
-import com.rowel.taskapi.auth.exception.UserNotFoundException;
-
-import io.jsonwebtoken.JwtException;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -33,14 +30,38 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   private final TaskUserDetailsService userDetailsService;
 
   @Override
+  protected boolean shouldNotFilter(HttpServletRequest request) {
+    String path = request.getRequestURI().substring(request.getContextPath().length());
+    String method = request.getMethod();
+
+    return ("GET".equals(method) && "/api/auth/csrf".equals(path)) ||
+      ("POST".equals(method) && (
+        "/api/auth/login".equals(path) ||
+        "/api/auth/register".equals(path) ||
+        "/api/auth/logout".equals(path)
+      ));
+  }
+
+  @Override
   protected void doFilterInternal(
     HttpServletRequest request,
     HttpServletResponse response,
     FilterChain filterChain
   ) throws ServletException, IOException {
-    String header = request.getHeader(HttpHeaders.AUTHORIZATION);
 
-    if (header == null || !header.startsWith("Bearer ")) {
+    String token = null;
+    Cookie[] cookies = request.getCookies();
+
+    if (cookies != null) {
+      for (Cookie cookie : cookies) {
+        if ("access_token".equals(cookie.getName())) {
+          token = cookie.getValue();
+          break;
+        }
+      }
+    }
+
+    if (token == null || token.isBlank()) {
       filterChain.doFilter(request, response);
       return;
     }
@@ -49,7 +70,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       Long userId;
       try {
         // Parsing also verifies the signature, issuer and expiration.
-        userId = jwtService.extractUserId(header.substring(7).trim());
+        userId = jwtService.extractUserId(token);
       } catch (JwtException | IllegalArgumentException _) {
         rejectToken(response);
         return;
@@ -86,9 +107,5 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   private void rejectToken(HttpServletResponse response) {
     SecurityContextHolder.clearContext();
     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-    response.setHeader(
-      HttpHeaders.WWW_AUTHENTICATE,
-      "Bearer error=\"invalid_token\""
-    );
   }
 }
