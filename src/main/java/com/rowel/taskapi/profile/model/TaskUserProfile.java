@@ -9,7 +9,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Lob;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
@@ -28,8 +27,7 @@ public class TaskUserProfile {
   @Column(name = "display_name", length = 100)
   private String displayName;
 
-  @Lob
-  @Column(name = "photo_data", columnDefinition = "varbinary(max)")
+  @Column(name = "photo_data", columnDefinition = "bytea")
   private byte[] photoData;
 
   @Column(name = "photo_content_type", length = 20)
