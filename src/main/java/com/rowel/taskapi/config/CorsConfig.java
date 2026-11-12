@@ -11,7 +11,10 @@ public class CorsConfig implements WebMvcConfigurer {
   public void addCorsMappings(CorsRegistry registry) {
     registry
       .addMapping("/**")
-      .allowedOrigins("http://localhost:4200")
+      .allowedOrigins(
+        "https://task-web-64xw.onrender.com",
+        "https://task-web-pva7.onrender.com"
+      )
       .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
       .allowedHeaders("*")
       .allowCredentials(true);
